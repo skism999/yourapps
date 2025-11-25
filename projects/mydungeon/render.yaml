@@ -9,7 +9,6 @@ services:
     buildCommand: |
       pip install -r requirements.txt
       playwright install chromium
-      playwright install-deps chromium
     startCommand: uvicorn backend.app:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: TARGET_URL
