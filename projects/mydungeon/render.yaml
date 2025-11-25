@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: mydungeon-app
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: |
+      pip install -r requirements.txt
+      playwright install chromium
+      playwright install-deps chromium
+    startCommand: uvicorn backend.app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: TARGET_URL
+        value: https://dungeon.humanjp.com/
+      - key: HEADLESS
+        value: true
+      - key: PYTHON_VERSION
+        value: 3.11.0
