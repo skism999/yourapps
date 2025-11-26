@@ -51,7 +51,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Playwrightブラウザのインストール
 RUN playwright install chromium
-RUN playwright install-deps chromium
 
 # アプリケーションファイルのコピー
 COPY . .
