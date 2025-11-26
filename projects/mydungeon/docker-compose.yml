@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # My Dungeon アプリケーション
+  mydungeon:
+    build: .
+    container_name: mydungeon-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # データベースファイルの永続化
+      - ./database:/app/database:ro
+      # 出力ファイルの永続化
+      - ./output:/app/output
+    environment:
+      - TARGET_URL=https://dungeon.humanjp.com/
+      - HEADLESS=true
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - ./backend/.env
+    networks:
+      - app-network
+
+  # Nginx リバースプロキシ
+  nginx:
+    image: nginx:alpine
+    container_name: mydungeon-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      # SSL証明書用（将来的に使用）
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - mydungeon
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
