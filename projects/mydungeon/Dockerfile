@@ -51,6 +51,10 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# 環境変数設定（Playwrightインストール前に設定）
+ENV PYTHONUNBUFFERED=1
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
 # Playwrightブラウザのインストール
 RUN playwright install chromium
 
@@ -59,10 +63,6 @@ COPY . .
 
 # 出力ディレクトリ作成
 RUN mkdir -p /app/output
-
-# 環境変数設定
-ENV PYTHONUNBUFFERED=1
-ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 # ポート公開
 EXPOSE 8000
