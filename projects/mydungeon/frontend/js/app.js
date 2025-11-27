@@ -187,7 +187,7 @@ function displayNamesList(data) {
     // 必殺技名を追加
     if (data.hissatsus && data.hissatsus.length > 0) {
         data.hissatsus.forEach(h => {
-            names.push(`<div class="text-red-600 font-bold text-base md:text-lg py-2">【必殺技】 ${h.name}</div>`);
+            names.push(`<div class="text-gray-800 font-bold text-base md:text-lg py-2">【必殺技】 ${h.name}</div>`);
         });
     }
 
@@ -244,10 +244,10 @@ function displayHissatsuwaza(data) {
     section?.classList.remove('hidden');
 
     container.innerHTML = data.hissatsus.map(h => `
-        <div class="border-l-4 border-red-500 pl-4 md:pl-8 py-6 bg-gradient-to-r from-red-50 to-transparent rounded-r-xl hover:shadow-lg transition-shadow duration-300">
+        <div class="pl-4 md:pl-8 py-6 bg-gradient-to-r from-red-50 to-transparent rounded-r-xl hover:shadow-lg transition-shadow duration-300">
             ${h.image_url ? `<div class="mb-6"><img src="${h.image_url}" alt="${h.name}" class="w-full max-w-md md:max-w-lg h-auto object-contain rounded-lg shadow-md mx-auto hissatsu-image-mobile"></div>` : ''}
             <div>
-                <h3 class="text-xl md:text-2xl font-bold text-red-600 mb-4 md:mb-6">
+                <h3 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">
                     ${h.name}
                 </h3>
                 <div class="space-y-3 text-gray-700 text-sm md:text-base leading-relaxed">
@@ -274,7 +274,7 @@ function displayItems(data) {
     if (!container || !data.items) return;
 
     container.innerHTML = data.items.map(item => `
-        <div class="border-l-4 border-blue-500 pl-4 md:pl-8 py-6 bg-gradient-to-r from-blue-50 to-transparent rounded-r-xl flex flex-col md:flex-row gap-4 md:gap-6 hover:shadow-lg transition-shadow duration-300 item-card-mobile">
+        <div class="pl-4 md:pl-8 py-6 bg-gradient-to-r from-blue-50 to-transparent rounded-r-xl flex flex-col md:flex-row gap-4 md:gap-6 hover:shadow-lg transition-shadow duration-300 item-card-mobile">
             ${item.image_url ? `<img src="${item.image_url}" alt="${item.name}" class="w-24 sm:w-28 md:w-48 max-w-xs mx-auto md:mx-0 my-4 md:my-0 h-auto object-contain rounded-lg shadow-md flex-shrink-0">` : ''}
             <div class="flex-1">
                 <h3 class="text-xl md:text-2xl font-bold text-gray-800 mb-4">
