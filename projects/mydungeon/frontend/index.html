@@ -12,7 +12,7 @@
     <style>
         /* select要素の文字色を調整 */
         select {
-            color: #3F3F46 !important;  /* 選択後は少し薄めのグレー */
+            color: #27272A !important;  /* 濃いグレー（生年月日の表示色） */
             font-weight: 500 !important; /* 中程度の太さ */
         }
         select option {
@@ -21,9 +21,14 @@
         }
         /* 未選択時（空のoption）は薄く */
         select option[value=""] {
-            color: #A1A1AA !important;  /* nameと同じ薄さ */
+            color: #A1A1AA !important;
         }
-        /* inputのプレースホルダーと同じ薄さに */
+        /* input要素の入力値の色を濃く */
+        input[type="text"] {
+            color: #27272A !important;  /* 濃いグレー（生年月日と同じ濃さ） */
+            font-weight: 500 !important; /* 中程度の太さ */
+        }
+        /* inputのプレースホルダーは薄く */
         input::placeholder {
             color: #A1A1AA !important;
         }

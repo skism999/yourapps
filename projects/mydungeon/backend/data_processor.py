@@ -142,9 +142,10 @@ class DataProcessor:
 
         # 各数字について対Noとのペアをチェック
         for number in numbers:
-            item_row = self.item_df[self.item_df['No'] == number]
-            if not item_row.empty:
-                item = item_row.iloc[0]
+            item_rows = self.item_df[self.item_df['No'] == number]
+
+            # 複数の行がある場合（複数の対Noを持つ特殊アイテム）、すべてチェック
+            for _, item in item_rows.iterrows():
                 pair_no = item['対No']
                 hissatsu_no = item['必殺No']
 
@@ -207,9 +208,10 @@ class DataProcessor:
         processed_pairs = set()
 
         for number in numbers:
-            item_row = self.item_df[self.item_df['No'] == number]
-            if not item_row.empty:
-                item = item_row.iloc[0]
+            item_rows = self.item_df[self.item_df['No'] == number]
+
+            # 複数の行がある場合（複数の対Noを持つ特殊アイテム）、すべてチェック
+            for _, item in item_rows.iterrows():
                 pair_no = item['対No']
                 hissatsu_no = item['必殺No']
 

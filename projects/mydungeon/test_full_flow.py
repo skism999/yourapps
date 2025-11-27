@@ -11,9 +11,9 @@ from backend.dungeon_service import DungeonService
 
 
 async def main():
-    birthdate = "1992-01-10"
-    birthtime = "10:30"
-    name = "yukino"
+    birthdate = "1996-06-21"
+    birthtime = "06:00"
+    name = "テスト"
 
     print("=" * 70)
     print(f"完全フローテスト: {name} - {birthdate} {birthtime}")
@@ -34,7 +34,7 @@ async def main():
 
     print(f"\nアイテム一覧: {result['item_count']}個")
     for item in result['items']:
-        hissatsu_mark = "★" if item['has_hissatsu'] else " "
+        hissatsu_mark = "★" if item.get('hissatsu_name') else " "
         print(f"  {hissatsu_mark} No.{item['no']:2d}: {item['name']:15s} ({item['color']})")
 
     print(f"\n必殺技一覧: {result['hissatsu_count']}個")

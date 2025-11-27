@@ -44,12 +44,15 @@ class ImageProcessor:
         try:
             # 日本語フォントの候補を試す
             font_candidates = [
+                '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',  # Noto Sans CJK JP（モダンで洗練された日本語フォント）
+                '/usr/share/fonts/truetype/fonts-japanese-gothic.ttf',  # IPAゴシック（フォールバック）
                 '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
                 '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
             ]
             for font_path in font_candidates:
                 if os.path.exists(font_path):
                     self.font_path = font_path
+                    logger.info(f"Using font: {font_path}")
                     break
 
             if self.font_path:
