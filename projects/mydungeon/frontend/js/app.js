@@ -334,3 +334,236 @@ function hideError() {
     const errorDiv = document.getElementById('error-message');
     if (errorDiv) errorDiv.classList.add('hidden');
 }
+
+// 画像ダウンロード機能
+function downloadResultImage() {
+    const resultImage = document.getElementById('result-image');
+
+    if (!resultImage || !resultImage.src) {
+        console.error('画像が見つかりません');
+        return;
+    }
+
+    // 画像URLを取得
+    const imageUrl = resultImage.src;
+
+    // ファイル名を生成（日時ベース）
+    const now = new Date();
+    const fileName = `mydungeon_result_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.png`;
+
+    // ダウンロードを実行
+    fetch(imageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+            // Blobから一時URLを作成
+            const url = window.URL.createObjectURL(blob);
+
+            // aタグを作成してダウンロードをトリガー
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = fileName;
+
+            document.body.appendChild(a);
+            a.click();
+
+            // クリーンアップ
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            console.log(`画像をダウンロードしました: ${fileName}`);
+        })
+        .catch(error => {
+            console.error('ダウンロードエラー:', error);
+            alert('画像のダウンロードに失敗しました。もう一度お試しください。');
+        });
+}
+
+// PDF生成・ダウンロード機能
+async function downloadResultPDF() {
+    try {
+        // ライブラリが読み込まれているか確認
+        if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
+            alert('PDF生成ライブラリの読み込みに失敗しました。ページを再読み込みしてください。');
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+
+        // ローディング表示
+        const button = document.getElementById('download-pdf-button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 bg-clip-text text-transparent font-bold">生成中...</span>';
+        button.disabled = true;
+
+        // 結果データを取得
+        const resultData = JSON.parse(sessionStorage.getItem('result'));
+        if (!resultData) {
+            alert('結果データが見つかりません');
+            button.innerHTML = originalText;
+            button.disabled = false;
+            return;
+        }
+
+        // PDFコンテンツを作成
+        const tempDiv = document.createElement('div');
+        tempDiv.style.cssText = 'position:absolute;left:-10000px;top:0;width:750px;background:white;padding:30px;font-family:sans-serif;color:#333;';
+
+        // コンテンツHTML生成
+        let html = '<div style="font-size:20px;font-weight:bold;text-align:center;margin-bottom:20px;">My Dungeon - 診断結果詳細</div>';
+
+        // 数字
+        html += '<div style="font-size:16px;font-weight:bold;margin-top:20px;margin-bottom:8px;border-bottom:2px solid #333;padding-bottom:3px;">あなたの数字</div>';
+        const numbers = resultData.numbers || [];
+        const hissatsuNumbers = new Set(resultData.hissatsu_numbers || []);
+        let numbersText = '';
+        numbers.forEach((num, index) => {
+            numbersText += hissatsuNumbers.has(num) ? `★${num}` : num;
+            if (index < numbers.length - 1) numbersText += ', ';
+        });
+        html += `<div style="font-size:12px;margin-bottom:20px;">${numbersText}</div>`;
+
+        // 必殺技とアイテム名
+        html += '<div style="font-size:16px;font-weight:bold;margin-top:20px;margin-bottom:8px;border-bottom:2px solid #333;padding-bottom:3px;">あなたの必殺技とアイテム</div>';
+        if (resultData.hissatsus && resultData.hissatsus.length > 0) {
+            resultData.hissatsus.forEach(h => {
+                html += `<div style="font-size:11px;font-weight:bold;margin:2px 0;">【必殺技】${h.name}</div>`;
+            });
+        }
+        if (resultData.items && resultData.items.length > 0) {
+            resultData.items.forEach(item => {
+                html += `<div style="font-size:11px;margin:2px 0;">No.${item.no}  ${item.name}</div>`;
+            });
+        }
+        html += '<div style="margin-bottom:20px;"></div>';
+
+        // 色ごとの枚数
+        html += '<div style="font-size:16px;font-weight:bold;margin-top:20px;margin-bottom:8px;border-bottom:2px solid #333;padding-bottom:3px;">色ごとの枚数</div>';
+        if (resultData.color_counts && resultData.color_counts.color_systems) {
+            resultData.color_counts.color_systems.forEach(system => {
+                html += `<div style="font-size:11px;font-weight:bold;margin:8px 0 3px;">${system.name}: ${system.meaning} - ${system.total_count}枚</div>`;
+                system.colors.forEach(color => {
+                    html += `<div style="font-size:10px;margin-left:15px;">${color.name}: ${color.meaning} - ${color.count}枚</div>`;
+                });
+            });
+        }
+        html += '<div style="margin-bottom:20px;"></div>';
+
+        // 必殺技詳細
+        if (resultData.hissatsus && resultData.hissatsus.length > 0) {
+            html += '<div style="font-size:16px;font-weight:bold;margin-top:20px;margin-bottom:8px;border-bottom:2px solid #333;padding-bottom:3px;">持っている必殺技</div>';
+            resultData.hissatsus.forEach(h => {
+                html += `<div style="margin:15px 0;padding:10px;background:#fafafa;border-radius:8px;font-size:10px;">
+                    <div style="font-weight:bold;font-size:12px;margin-bottom:5px;">${h.name}</div>
+                    <div>色: ${h.color}</div><div>意味: ${h.meaning}</div><div>動き方: ${h.movement}</div>
+                    <div>基本姿勢: ${h.basic_posture}</div><div>才能: ${h.talent}</div>
+                    <div>特性: ${h.characteristics}</div><div>アドバイス: ${h.advice}</div>
+                    <div style="color:#16a34a;"><span style="font-weight:bold;">ON:</span> ${h.on_state}</div>
+                    <div style="color:#dc2626;"><span style="font-weight:bold;">OFF:</span> ${h.off_state}</div>
+                </div>`;
+            });
+        }
+
+        // アイテム詳細
+        html += '<div style="font-size:16px;font-weight:bold;margin-top:20px;margin-bottom:8px;border-bottom:2px solid #333;padding-bottom:3px;">持っているアイテム</div>';
+        if (resultData.items && resultData.items.length > 0) {
+            resultData.items.forEach(item => {
+                html += `<div style="margin:15px 0;padding:10px;background:#fafafa;border-radius:8px;font-size:10px;">
+                    <div style="font-weight:bold;font-size:12px;margin-bottom:5px;">No.${item.no}: ${item.name}</div>
+                    <div>色: ${item.color}</div><div>動き方: ${item.movement}</div>
+                    <div>説明: ${item.description}</div>
+                    <div style="color:#16a34a;"><span style="font-weight:bold;">ON:</span> ${item.on_state}</div>
+                    <div style="color:#dc2626;"><span style="font-weight:bold;">OFF:</span> ${item.off_state}</div>
+                </div>`;
+            });
+        }
+
+        // 動き方
+        if (resultData.actions && resultData.actions.length > 0) {
+            html += '<div style="font-size:16px;font-weight:bold;margin-top:20px;margin-bottom:8px;border-bottom:2px solid #333;padding-bottom:3px;">動き方の説明</div>';
+            resultData.actions.forEach(action => {
+                html += `<div style="margin:10px 0;font-size:10px;">
+                    <div style="font-weight:bold;">${action.action}</div>
+                    <div style="margin-left:10px;">${action.meaning}</div>
+                </div>`;
+            });
+        }
+
+        tempDiv.innerHTML = html;
+        document.body.appendChild(tempDiv);
+
+        // キャンバスに変換
+        const canvas = await html2canvas(tempDiv, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        });
+
+        document.body.removeChild(tempDiv);
+
+        // PDF作成
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+
+        const margin = 15;
+        const imgWidth = pdfWidth - (margin * 2);
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const pageContentHeight = pdfHeight - (margin * 2);
+
+        // ページ数を計算
+        const totalPages = Math.ceil(imgHeight / pageContentHeight);
+
+        for (let pageNum = 0; pageNum < totalPages; pageNum++) {
+            if (pageNum > 0) {
+                pdf.addPage();
+            }
+
+            const yStart = pageNum * pageContentHeight;
+            const yEnd = Math.min((pageNum + 1) * pageContentHeight, imgHeight);
+            const actualHeight = yEnd - yStart;
+
+            // キャンバスから該当部分を切り出し
+            const pageCanvas = document.createElement('canvas');
+            const canvasYStart = (yStart / imgWidth) * canvas.width;
+            const canvasHeight = (actualHeight / imgWidth) * canvas.width;
+
+            pageCanvas.width = canvas.width;
+            pageCanvas.height = canvasHeight;
+
+            const ctx = pageCanvas.getContext('2d');
+            ctx.drawImage(
+                canvas,
+                0, canvasYStart,
+                canvas.width, canvasHeight,
+                0, 0,
+                canvas.width, canvasHeight
+            );
+
+            const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+            pdf.addImage(pageImgData, 'JPEG', margin, margin, imgWidth, actualHeight);
+        }
+
+        // ファイル名生成
+        const now = new Date();
+        const fileName = `mydungeon_details_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.pdf`;
+
+        pdf.save(fileName);
+
+        console.log(`PDFをダウンロードしました: ${fileName}`);
+
+        button.innerHTML = originalText;
+        button.disabled = false;
+
+    } catch (error) {
+        console.error('PDF生成エラー:', error);
+        alert('PDFの生成に失敗しました。もう一度お試しください。');
+
+        const button = document.getElementById('download-pdf-button');
+        if (button) {
+            button.innerHTML = '<span class="bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 bg-clip-text text-transparent font-bold">詳細をPDFで保存</span>';
+            button.disabled = false;
+        }
+    }
+}

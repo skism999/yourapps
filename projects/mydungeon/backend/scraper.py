@@ -18,16 +18,18 @@ class DungeonScraper:
         self.url = settings.TARGET_URL
         self.timeout = settings.SCRAPING_TIMEOUT
 
-    async def scrape_numbers(self, birthdate: str, birthtime: str) -> List[int]:
+    async def scrape_numbers(self, birthdate: str, birthtime: str, return_raw_text: bool = False):
         """
         生年月日と時刻を入力して数字を取得
 
         Args:
             birthdate: 生年月日 (YYYY-MM-DD)
             birthtime: 時刻 (HH:MM)
+            return_raw_text: Trueの場合、(numbers, raw_text)のタプルを返す
 
         Returns:
-            取得した数字のリスト
+            return_raw_text=False: 取得した数字のリスト
+            return_raw_text=True: (取得した数字のリスト, 生のテキスト)のタプル
         """
         # 日付と時刻を分解（先頭ゼロを削除）
         year, month, day = birthdate.split('-')
@@ -98,16 +100,18 @@ class DungeonScraper:
                 # 結果が表示される要素を探す
                 # 動的に生成される可能性が高いので、複数のパターンを試す
                 numbers = []
+                raw_text = ""
 
                 # パターン1: テーブル要素を探す
                 try:
                     await page.wait_for_selector('table', timeout=5000)
                     # テーブル内の数字を抽出
                     table_text = await page.inner_text('table')
+                    raw_text = table_text
                     logger.info(f"Table text found: {table_text[:200]}")
-                    # 数字を抽出（1〜60の範囲）
-                    found_numbers = re.findall(r'\b([1-5]?[0-9]|60)\b', table_text)
-                    numbers = [int(n) for n in found_numbers if 1 <= int(n) <= 60]
+                    # 数字を抽出（1〜72の範囲）
+                    found_numbers = re.findall(r'\b([1-9]|[1-6][0-9]|7[0-2])\b', table_text)
+                    numbers = [int(n) for n in found_numbers if 1 <= int(n) <= 72]
                 except PlaywrightTimeout:
                     logger.warning("Table not found, trying other patterns")
 
@@ -118,9 +122,10 @@ class DungeonScraper:
                         result_section = await page.query_selector('#app section:not(#data-input)')
                         if result_section:
                             result_text = await result_section.inner_text()
+                            raw_text = result_text
                             logger.info(f"Result section found: {result_text[:200]}")
-                            found_numbers = re.findall(r'\b([1-5]?[0-9]|60)\b', result_text)
-                            numbers = [int(n) for n in found_numbers if 1 <= int(n) <= 60]
+                            found_numbers = re.findall(r'\b([1-9]|[1-6][0-9]|7[0-2])\b', result_text)
+                            numbers = [int(n) for n in found_numbers if 1 <= int(n) <= 72]
                     except PlaywrightTimeout:
                         logger.warning("Result section not found")
 
@@ -135,12 +140,13 @@ class DungeonScraper:
 
                     # テキストコンテンツ全体から数字を抽出
                     body_text = await page.inner_text('body')
+                    raw_text = body_text
                     logger.info(f"Body text: {body_text[:500]}")
 
-                    # 1〜60の範囲の数字を抽出
-                    found_numbers = re.findall(r'\b([1-5]?[0-9]|60)\b', body_text)
+                    # 1〜72の範囲の数字を抽出
+                    found_numbers = re.findall(r'\b([1-9]|[1-6][0-9]|7[0-2])\b', body_text)
                     # 重複を除去せず、順番に並べる
-                    numbers = [int(n) for n in found_numbers if 1 <= int(n) <= 60]
+                    numbers = [int(n) for n in found_numbers if 1 <= int(n) <= 72]
 
                     # 明らかに関係ない数字（年月日など）を除外
                     # 生年月日と時刻に含まれる数字を除外
@@ -162,7 +168,10 @@ class DungeonScraper:
                 if not numbers:
                     logger.error("No numbers found. Check the output directory for screenshots and HTML.")
 
-                return numbers
+                if return_raw_text:
+                    return numbers, raw_text
+                else:
+                    return numbers
 
             except Exception as e:
                 logger.error(f"Scraping error: {str(e)}")
