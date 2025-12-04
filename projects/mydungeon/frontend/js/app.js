@@ -335,13 +335,28 @@ function hideError() {
     if (errorDiv) errorDiv.classList.add('hidden');
 }
 
-// 画像ダウンロード機能
+// 画像ダウンロード機能（モバイル対応）
 function downloadResultImage() {
     const resultImage = document.getElementById('result-image');
 
     if (!resultImage || !resultImage.src) {
         console.error('画像が見つかりません');
+        alert('画像が読み込まれていません。');
         return;
+    }
+
+    // ボタンを無効化してフィードバック
+    const button = document.getElementById('download-button');
+    if (button) {
+        button.disabled = true;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<span class="bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 bg-clip-text text-transparent font-bold">ダウンロード中...</span>';
+
+        // タイムアウト後に元に戻す
+        setTimeout(() => {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }, 3000);
     }
 
     // 画像URLを取得
@@ -351,31 +366,76 @@ function downloadResultImage() {
     const now = new Date();
     const fileName = `mydungeon_result_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.png`;
 
+    // モバイル判定
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
     // ダウンロードを実行
     fetch(imageUrl)
-        .then(response => response.blob())
+        .then(response => {
+            if (!response.ok) throw new Error('画像の取得に失敗しました');
+            return response.blob();
+        })
         .then(blob => {
             // Blobから一時URLを作成
             const url = window.URL.createObjectURL(blob);
 
-            // aタグを作成してダウンロードをトリガー
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = fileName;
+            if (isMobile) {
+                // モバイルの場合: 新しいタブで開く（より確実）
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
 
-            document.body.appendChild(a);
-            a.click();
+                // モバイルでのクリックイベントをシミュレート
+                document.body.appendChild(link);
 
-            // クリーンアップ
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+                // タッチイベントとクリックイベントの両方をトリガー
+                if (typeof link.click === 'function') {
+                    link.click();
+                } else {
+                    // click()が使えない場合の代替手段
+                    const evt = new MouseEvent('click', {
+                        view: window,
+                        bubbles: true,
+                        cancelable: true
+                    });
+                    link.dispatchEvent(evt);
+                }
+
+                // クリーンアップ（少し遅延させる）
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(link);
+                }, 100);
+            } else {
+                // PCの場合: 従来の方法
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = fileName;
+
+                document.body.appendChild(a);
+                a.click();
+
+                // クリーンアップ
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }, 100);
+            }
 
             console.log(`画像をダウンロードしました: ${fileName}`);
         })
         .catch(error => {
             console.error('ダウンロードエラー:', error);
             alert('画像のダウンロードに失敗しました。もう一度お試しください。');
+
+            // エラー時もボタンを元に戻す
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = '<span class="bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 bg-clip-text text-transparent font-bold">画像をダウンロード</span>';
+            }
         });
 }
 

@@ -31,9 +31,8 @@
                 <div class="mt-8 flex justify-center">
                     <button
                         id="download-button"
-                        onclick="downloadResultImage()"
-                        class="font-bold py-3 px-4 rounded-2xl hover:shadow-2xl transform hover:-translate-y-1 transition duration-300 text-sm w-full"
-                        style="max-width: 210px; background: white; border: 3px solid rgb(168, 85, 247); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);"
+                        class="font-bold py-3 px-4 rounded-2xl hover:shadow-2xl transform hover:-translate-y-1 transition duration-300 text-sm w-full touch-manipulation"
+                        style="max-width: 210px; background: white; border: 3px solid rgb(168, 85, 247); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); cursor: pointer;"
                     >
                         <span class="bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 bg-clip-text text-transparent font-bold">
                             画像をダウンロード
@@ -62,9 +61,8 @@
             <div class="mt-8 flex justify-center">
                 <button
                     id="download-pdf-button"
-                    onclick="downloadResultPDF()"
-                    class="font-bold py-3 px-4 rounded-2xl hover:shadow-2xl transform hover:-translate-y-1 transition duration-300 text-sm w-full"
-                    style="max-width: 210px; background: white; border: 3px solid rgb(168, 85, 247); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);"
+                    class="font-bold py-3 px-4 rounded-2xl hover:shadow-2xl transform hover:-translate-y-1 transition duration-300 text-sm w-full touch-manipulation"
+                    style="max-width: 210px; background: white; border: 3px solid rgb(168, 85, 247); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); cursor: pointer;"
                 >
                     <span class="bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 bg-clip-text text-transparent font-bold">
                         詳細をPDFで保存
@@ -129,10 +127,36 @@
         </div>
     </div>
 
-    <script src="/static/js/app.js?v=4"></script>
+    <script src="/static/js/app.js?v=5"></script>
     <script>
-        // ページロード時に結果を表示
-        window.addEventListener('DOMContentLoaded', displayResult);
+        // ページロード時に結果を表示とイベントリスナー設定
+        window.addEventListener('DOMContentLoaded', () => {
+            displayResult();
+
+            // ダウンロードボタンのイベントリスナーを設定
+            const downloadButton = document.getElementById('download-button');
+            if (downloadButton) {
+                // クリックイベント
+                downloadButton.addEventListener('click', downloadResultImage);
+                // タッチイベント（モバイル対応）
+                downloadButton.addEventListener('touchend', (e) => {
+                    e.preventDefault(); // デフォルトのタッチ動作を防ぐ
+                    downloadResultImage();
+                });
+            }
+
+            // PDFダウンロードボタンのイベントリスナーを設定
+            const downloadPdfButton = document.getElementById('download-pdf-button');
+            if (downloadPdfButton) {
+                // クリックイベント
+                downloadPdfButton.addEventListener('click', downloadResultPDF);
+                // タッチイベント（モバイル対応）
+                downloadPdfButton.addEventListener('touchend', (e) => {
+                    e.preventDefault(); // デフォルトのタッチ動作を防ぐ
+                    downloadResultPDF();
+                });
+            }
+        });
     </script>
 </body>
 </html>
