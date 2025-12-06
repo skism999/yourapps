@@ -1,7 +1,7 @@
 # My Dungeon プロジェクト - 現状サマリー
 
 **最終更新日**: 2025年12月4日
-**プロジェクト状態**: ✅ 本番稼働中（ConoHa VPS）
+**プロジェクト状態**: 🔨 相性診断機能開発中（action_2ブランチ）/ ✅ 1人診断は本番稼働中（ConoHa VPS）
 
 ---
 
@@ -158,9 +158,99 @@ mydungeon/
 
 ---
 
+## 🚧 開発中の機能（action_2ブランチ）
+
+### 相性診断機能（2人診断）
+
+**実装状況**: バックエンド実装完了、フロントエンド実装完了、**デバッグ中**
+
+#### 実装済み（✅）
+
+**バックエンド**:
+- ✅ `backend/models.py` - CompatibilityRequestモデル追加
+- ✅ `backend/compatibility_processor.py` - 3カテゴリ必殺技分類ロジック
+  - 二人で発動する必殺技（person1がAのみ、person2がBのみ）
+  - Person1相乗効果（person1がA+B、person2がAまたはB）
+  - Person2相乗効果（person2がA+B、person1がAまたはB）
+- ✅ `backend/compatibility_service.py` - 相性診断サービス（asyncio.gather並列スクレイピング）
+- ✅ `backend/compatibility_image_processor.py` - 3行レイアウト画像生成（色順序、4枚/行で折り返し）
+- ✅ `backend/app.py` - `/api/generate-compatibility` エンドポイント追加
+- ✅ **バグ修正**: `_find_hissatsu_image_path` → `_find_image_path` メソッド名修正（2025年12月4日）
+
+**フロントエンド**:
+- ✅ `frontend/index.html` - タブUI追加（1人診断/相性診断）
+- ✅ `frontend/js/app.js` - タブ切り替えロジック、相性診断フォーム送信処理
+- ✅ `frontend/result_compatibility.html` - 相性診断結果ページ
+- ✅ `frontend/js/compatibility.js` - 数字の色分け表示（紫/オレンジ/赤）、3カテゴリ必殺技表示
+
+#### 次回作業で実施すること（🔄）
+
+1. **動作確認とデバッグ**:
+   - [ ] Dockerコンテナ再起動（`docker-compose restart mydungeon`）
+   - [ ] ブラウザのキャッシュクリアまたはスーパーリロード（Ctrl+Shift+R）
+   - [ ] タブ切り替え動作確認
+   - [ ] 相性診断フォーム表示確認
+   - [ ] 2人分のデータ入力→API送信→結果表示の一連のテスト
+
+2. **バグが残っている場合の対処**:
+   - [ ] ブラウザの開発者ツールでJavaScriptエラーを確認
+   - [ ] バックエンドログを確認（`docker-compose logs -f mydungeon`）
+   - [ ] 必要に応じて修正
+
+3. **テストケース**:
+   - Person1: 1991年9月16日13時50分
+   - Person2: 1997年5月24日20時50分
+
+4. **デプロイ準備**:
+   - [ ] 全機能の統合テスト完了後、mainブランチにマージ
+   - [ ] ConoHa VPSにデプロイ
+
+#### 技術的なポイント
+
+- **数字の色分け優先度**: 紫（joint） > オレンジ（synergy） > 赤（solo） > グレー（その他）
+- **画像レイアウト**: 3行構成、色順序（赤→桃→緑→黄緑→青→水→黄）、最大4枚/行で折り返し
+- **並列スクレイピング**: asyncio.gatherで2人分を並列処理（6秒→3秒に短縮）
+- **データ分離**: sessionStorage key（`'result'` vs `'compatibility-result'`）
+
+#### ファイル構成
+
+**新規作成ファイル（5つ）**:
+```
+backend/
+├── compatibility_processor.py      # 相性必殺技カテゴリ分類
+├── compatibility_service.py        # 相性診断サービス
+└── compatibility_image_processor.py # 相性画像生成
+
+frontend/
+├── result_compatibility.html       # 相性結果ページ
+└── js/
+    └── compatibility.js            # 相性結果表示JS
+```
+
+**変更ファイル（4つ）**:
+```
+backend/
+├── models.py                       # CompatibilityRequest追加
+└── app.py                          # /api/generate-compatibility追加
+
+frontend/
+├── index.html                      # タブUI追加
+└── js/
+    └── app.js                      # タブ切り替え、相性フォーム送信
+```
+
+---
+
 ## 🔧 最近の修正履歴
 
-### 2025年12月4日
+### 2025年12月4日（相性診断機能開発）
+- ✅ 相性診断機能のバックエンド実装完了（ステップ1-5）
+- ✅ 相性診断機能のフロントエンド実装完了（ステップ6-7）
+- ✅ バグ修正: `compatibility_processor.py`で`_find_image_path`メソッド名を修正
+- ✅ `settings`インポート追加
+- 🔄 次回: 動作確認とデバッグ
+
+### 2025年12月4日（モバイル対応修正）
 - ✅ モバイルでダウンロードボタンが反応しない問題を修正
 - ✅ app.jsにモバイル対応のダウンロード関数を実装
   - モバイル判定とデバイス別処理

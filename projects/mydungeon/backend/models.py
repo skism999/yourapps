@@ -47,3 +47,12 @@ class ResultResponse(BaseModel):
     hissatsus: List[HissatsuInfo]
     image_url: Optional[str] = None
     pdf_url: Optional[str] = None
+
+class CompatibilityRequest(BaseModel):
+    """相性診断のリクエスト"""
+    person1_name: Optional[str] = None
+    person1_birthdate: str  # "YYYY-MM-DD"
+    person1_birthtime: str  # "HH:MM"
+    person2_name: Optional[str] = None
+    person2_birthdate: str  # "YYYY-MM-DD"
+    person2_birthtime: str  # "HH:MM"

@@ -4,9 +4,43 @@ const API_BASE = '';  // 同じオリジンの場合は空文字
 // ページロード時にセレクトボックスの選択肢を生成
 document.addEventListener('DOMContentLoaded', () => {
     initializeDateTimeSelects();
+    initializeCompatibilityDateTimeSelects();
+    initializeTabs();
 });
 
-// 年月日時分のセレクトボックスを初期化
+// タブの初期化
+function initializeTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.dataset.tab;
+            switchTab(tabName);
+        });
+    });
+}
+
+// タブ切り替え
+function switchTab(tabName) {
+    // すべてのタブボタンから active を削除
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // すべてのタブコンテンツから active を削除し、hidden を追加
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+        content.classList.add('hidden');
+    });
+
+    // 選択されたタブをアクティブにする
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+    const targetContainer = document.getElementById(`${tabName}-form-container`);
+    targetContainer.classList.remove('hidden');
+    targetContainer.classList.add('active');
+}
+
+// 年月日時分のセレクトボックスを初期化（1人診断用）
 function initializeDateTimeSelects() {
     const yearSelect = document.getElementById('birth-year');
     const monthSelect = document.getElementById('birth-month');
@@ -625,5 +659,176 @@ async function downloadResultPDF() {
             button.innerHTML = '<span class="bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 bg-clip-text text-transparent font-bold">詳細をPDFで保存</span>';
             button.disabled = false;
         }
+    }
+}
+
+// ========================================
+// 相性診断機能
+// ========================================
+
+// 相性診断フォームの日時セレクトを初期化
+function initializeCompatibilityDateTimeSelects() {
+    const person1Selects = {
+        year: document.getElementById('person1-birth-year'),
+        month: document.getElementById('person1-birth-month'),
+        day: document.getElementById('person1-birth-day'),
+        hour: document.getElementById('person1-birth-hour'),
+        minute: document.getElementById('person1-birth-minute')
+    };
+
+    const person2Selects = {
+        year: document.getElementById('person2-birth-year'),
+        month: document.getElementById('person2-birth-month'),
+        day: document.getElementById('person2-birth-day'),
+        hour: document.getElementById('person2-birth-hour'),
+        minute: document.getElementById('person2-birth-minute')
+    };
+
+    if (!person1Selects.year) return; // 入力画面でない場合は処理しない
+
+    // Person1とPerson2の両方のセレクトを初期化
+    [person1Selects, person2Selects].forEach(selects => {
+        // 年の選択肢を生成（1900年〜現在年）
+        const currentYear = new Date().getFullYear();
+        for (let year = currentYear; year >= 1900; year--) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year + '年';
+            selects.year.appendChild(option);
+        }
+
+        // 月の選択肢を生成（1〜12月）
+        for (let month = 1; month <= 12; month++) {
+            const option = document.createElement('option');
+            option.value = month;
+            option.textContent = month + '月';
+            selects.month.appendChild(option);
+        }
+
+        // 日の選択肢を生成（1〜31日）
+        for (let day = 1; day <= 31; day++) {
+            const option = document.createElement('option');
+            option.value = day;
+            option.textContent = day + '日';
+            selects.day.appendChild(option);
+        }
+
+        // 時の選択肢を生成（0〜23時）
+        for (let hour = 0; hour <= 23; hour++) {
+            const option = document.createElement('option');
+            option.value = hour;
+            option.textContent = hour + '時';
+            selects.hour.appendChild(option);
+        }
+
+        // 分の選択肢を生成（0〜59分）
+        for (let minute = 0; minute <= 59; minute++) {
+            const option = document.createElement('option');
+            option.value = minute;
+            option.textContent = minute + '分';
+            selects.minute.appendChild(option);
+        }
+    });
+}
+
+// 相性診断フォームの処理
+document.getElementById('compatibility-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Person1のデータ取得
+    const person1Name = document.getElementById('person1-name').value.trim();
+    const person1Year = document.getElementById('person1-birth-year').value;
+    const person1Month = document.getElementById('person1-birth-month').value;
+    const person1Day = document.getElementById('person1-birth-day').value;
+    const person1Hour = document.getElementById('person1-birth-hour').value;
+    const person1Minute = document.getElementById('person1-birth-minute').value;
+
+    // Person2のデータ取得
+    const person2Name = document.getElementById('person2-name').value.trim();
+    const person2Year = document.getElementById('person2-birth-year').value;
+    const person2Month = document.getElementById('person2-birth-month').value;
+    const person2Day = document.getElementById('person2-birth-day').value;
+    const person2Hour = document.getElementById('person2-birth-hour').value;
+    const person2Minute = document.getElementById('person2-birth-minute').value;
+
+    // 生年月日と時刻をフォーマット
+    const person1Birthdate = `${person1Year}-${String(person1Month).padStart(2, '0')}-${String(person1Day).padStart(2, '0')}`;
+    const person1Birthtime = `${String(person1Hour).padStart(2, '0')}:${String(person1Minute).padStart(2, '0')}`;
+    const person2Birthdate = `${person2Year}-${String(person2Month).padStart(2, '0')}-${String(person2Day).padStart(2, '0')}`;
+    const person2Birthtime = `${String(person2Hour).padStart(2, '0')}:${String(person2Minute).padStart(2, '0')}`;
+
+    // ローディング表示
+    showCompatibilityLoading();
+    hideCompatibilityError();
+
+    try {
+        const response = await fetch(`${API_BASE}/api/generate-compatibility`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                person1_name: person1Name || null,
+                person1_birthdate: person1Birthdate,
+                person1_birthtime: person1Birthtime,
+                person2_name: person2Name || null,
+                person2_birthdate: person2Birthdate,
+                person2_birthtime: person2Birthtime
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || '相性診断に失敗しました');
+        }
+
+        const resultData = await response.json();
+
+        // セッションストレージに保存
+        sessionStorage.setItem('compatibility-result', JSON.stringify(resultData));
+
+        // 結果ページに遷移
+        window.location.href = '/static/result_compatibility.html';
+
+    } catch (error) {
+        console.error('Error:', error);
+        showCompatibilityError(error.message);
+    } finally {
+        hideCompatibilityLoading();
+    }
+});
+
+// 相性診断用のローディング表示
+function showCompatibilityLoading() {
+    const loading = document.getElementById('compatibility-loading');
+    const form = document.getElementById('compatibility-form');
+    if (loading && form) {
+        loading.classList.remove('hidden');
+        form.style.display = 'none';
+    }
+}
+
+function hideCompatibilityLoading() {
+    const loading = document.getElementById('compatibility-loading');
+    const form = document.getElementById('compatibility-form');
+    if (loading && form) {
+        loading.classList.add('hidden');
+        form.style.display = 'block';
+    }
+}
+
+// 相性診断用のエラー表示
+function showCompatibilityError(message) {
+    const errorDiv = document.getElementById('compatibility-error-message');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.classList.remove('hidden');
+    }
+}
+
+function hideCompatibilityError() {
+    const errorDiv = document.getElementById('compatibility-error-message');
+    if (errorDiv) {
+        errorDiv.classList.add('hidden');
     }
 }

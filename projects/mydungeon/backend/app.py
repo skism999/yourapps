@@ -16,6 +16,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.config import settings
 from backend.dungeon_service import DungeonService
+from backend.compatibility_service import CompatibilityService
+from backend.models import CompatibilityRequest
 
 # ロギング設定
 logging.basicConfig(
@@ -40,8 +42,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# DungeonServiceのインスタンス
+# サービスのインスタンス
 service = DungeonService()
+compatibility_service = CompatibilityService()
 
 # パス設定
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -111,6 +114,60 @@ async def generate_result(request: GenerateRequest):
 
     except Exception as e:
         logger.error(f"Error generating result: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/generate-compatibility")
+async def generate_compatibility_result(request: CompatibilityRequest):
+    """
+    2人の相性診断結果を生成
+
+    リクエスト:
+        - person1_name: person1の名前（オプション）
+        - person1_birthdate: person1の生年月日 (YYYY-MM-DD形式)
+        - person1_birthtime: person1の時刻 (HH:MM形式)
+        - person2_name: person2の名前（オプション）
+        - person2_birthdate: person2の生年月日 (YYYY-MM-DD形式)
+        - person2_birthtime: person2の時刻 (HH:MM形式)
+
+    レスポンス:
+        - image_url: 相性画像のURL
+        - person1: person1の診断結果
+        - person2: person2の診断結果
+        - joint_hissatsus: 二人で発動する必殺技
+        - person1_synergy_hissatsus: person1の相乗効果必殺技
+        - person2_synergy_hissatsus: person2の相乗効果必殺技
+        - color_counts: 色ごとの枚数情報
+        - actions: 動き方の説明
+    """
+    try:
+        logger.info(f"Received compatibility request: "
+                   f"Person1={request.person1_birthdate} {request.person1_birthtime}, "
+                   f"Person2={request.person2_birthdate} {request.person2_birthtime}")
+
+        # 相性診断結果生成
+        result = await compatibility_service.generate_compatibility_result(
+            request.person1_birthdate,
+            request.person1_birthtime,
+            request.person2_birthdate,
+            request.person2_birthtime,
+            request.person1_name,
+            request.person2_name
+        )
+
+        # 画像URLを相対パスに変換
+        if result['image_path']:
+            image_filename = os.path.basename(result['image_path'])
+            result['image_url'] = f"/output/{image_filename}"
+        else:
+            result['image_url'] = None
+
+        logger.info(f"Successfully generated compatibility result")
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Error generating compatibility result: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
