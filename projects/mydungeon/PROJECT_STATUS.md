@@ -1,7 +1,7 @@
 # My Dungeon プロジェクト - 現状サマリー
 
 **最終更新日**: 2025年12月4日
-**プロジェクト状態**: 🔨 相性診断機能開発中（action_2ブランチ）/ ✅ 1人診断は本番稼働中（ConoHa VPS）
+**プロジェクト状態**: 🔨 相性診断機能開発中（action_2ブランチ）/ ✅ 個人診断は本番稼働中（ConoHa VPS）
 
 ---
 
@@ -178,7 +178,7 @@ mydungeon/
 - ✅ **バグ修正**: `_find_hissatsu_image_path` → `_find_image_path` メソッド名修正（2025年12月4日）
 
 **フロントエンド**:
-- ✅ `frontend/index.html` - タブUI追加（1人診断/相性診断）
+- ✅ `frontend/index.html` - タブUI追加（個人診断/相性診断）
 - ✅ `frontend/js/app.js` - タブ切り替えロジック、相性診断フォーム送信処理
 - ✅ `frontend/result_compatibility.html` - 相性診断結果ページ
 - ✅ `frontend/js/compatibility.js` - 数字の色分け表示（紫/オレンジ/赤）、3カテゴリ必殺技表示

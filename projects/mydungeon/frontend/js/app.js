@@ -40,7 +40,7 @@ function switchTab(tabName) {
     targetContainer.classList.add('active');
 }
 
-// 年月日時分のセレクトボックスを初期化（1人診断用）
+// 年月日時分のセレクトボックスを初期化（個人診断用）
 function initializeDateTimeSelects() {
     const yearSelect = document.getElementById('birth-year');
     const monthSelect = document.getElementById('birth-month');
